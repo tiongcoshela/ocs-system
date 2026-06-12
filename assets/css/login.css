@@ -1,12 +1,14 @@
-﻿:root {
+:root {
     --navy:#0f2044; --navy-mid:#1a3460; --blue:#1e4fa3;
     --sky:#3b82f6; --sky-light:#93c5fd; --gold:#f59e0b;
     --white:#ffffff; --gray-50:#f8fafc; --gray-100:#f1f5f9;
     --gray-200:#e2e8f0; --gray-400:#94a3b8; --gray-600:#475569;
     --gray-800:#1e293b; --red:#ef4444; --red-bg:#fee2e2;
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Plus Jakarta Sans',sans-serif; min-height:100vh; display:flex; }
+  * {
+  font-family: "Times New Roman", Times, serif !important;
+ margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: "Times New Roman", Times, serif !important; min-height:100vh; display:flex; }
 
   /* LEFT: Login Form (dark) */
   .login-left {
@@ -41,7 +43,7 @@
 
   .login-form-header { text-align:center; margin-bottom:24px; }
   .login-form-header h2 {
-    font-family:'DM Serif Display',serif; font-size:34px;
+    font-family: "Times New Roman", Times, serif !important; font-size:34px;
     color:var(--white); margin-bottom:8px;
   }
   .login-form-header p { color:var(--sky-light); font-size:14px; }
@@ -67,7 +69,7 @@
   .form-group input, .form-group select {
     width:100%; padding:13px 14px 13px 43px;
     border:2px solid rgba(255,255,255,.15); border-radius:8px;
-    font-family:'Plus Jakarta Sans',sans-serif; font-size:15px;
+    font-family: "Times New Roman", Times, serif !important; font-size:15px;
     color:var(--white); background:rgba(255,255,255,.08);
     transition:border-color .2s,box-shadow .2s; outline:none; appearance:none;
   }
@@ -87,7 +89,7 @@
   .login-btn {
     width:100%; padding:14px; background:var(--sky);
     color:var(--white); border:none; border-radius:8px;
-    font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:700;
+    font-family: "Times New Roman", Times, serif !important; font-size:15px; font-weight:700;
     cursor:pointer; box-shadow:0 4px 18px rgba(59,130,246,.45);
     transition:transform .15s,box-shadow .15s; margin-top:6px;
   }
@@ -114,12 +116,12 @@
     position:absolute; inset:0;
     width:100%;height:100%;border-radius:14px;background:#dbeafe;color:#1e3a8a;
     display:none;align-items:center;justify-content:center;font-weight:800;font-size:34px;
-    font-family:'DM Serif Display',serif;
+    font-family: "Times New Roman", Times, serif !important;
   }
 
   .brand-name { text-align:center; margin-bottom:24px; }
   .brand-name h1 {
-    font-family:'DM Serif Display',serif;
+    font-family: "Times New Roman", Times, serif !important;
     font-size:30px; color:var(--navy); font-weight:900;
     line-height:1.15; margin-bottom:10px;
   }
@@ -151,7 +153,7 @@
   .feature-item span { color:var(--gray-800); font-size:12px; font-weight:500; line-height:1.4; }
 
   @media (max-width:768px) {
-    body { flex-direction:column-reverse; }
+    body { font-family: "Times New Roman", Times, serif !important;  flex-direction:column-reverse; }
     .login-left { padding:48px 24px; flex:unset; }
     .login-right { padding:40px 24px; flex:unset; }
     .form-card { padding:32px 24px; }

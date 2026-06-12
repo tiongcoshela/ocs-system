@@ -18,9 +18,10 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email    = trim(mysqli_real_escape_string($conn, $_POST['email']));
     $password = $_POST['password'];
-    $role     = mysqli_real_escape_string($conn, $_POST['role']);
+    $role_raw = $_POST['role'] ?? '';
+    $role     = mysqli_real_escape_string($conn, $role_raw);
 
-    if (empty($email) || empty($password) || empty($role)) {
+    if (empty($email) || empty($password) || empty($role_raw)) {
         $error = 'Please fill in all fields.';
     } else {
         $sql    = "SELECT * FROM users WHERE email = '$email' AND role = '$role' LIMIT 1";
@@ -52,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>Sign In - Diploma Program Clearance System</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/login.css">
@@ -115,14 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!-- RIGHT: Branding -->
 <div class="login-right">
   <div class="brand-logo">
-    <img
-      class="brand-logo-img"
-      src="assets/img/logo.png"
-      alt="School Logo"
-      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-    >
-    <div class="brand-logo-fallback">AC</div>
-  </div>
+  <img src="/assets/img/ocs.png" class="brand-logo-img" alt="Logo">
+</div>
   <div class="brand-name">
     <h1>Asian College<br>Dumaguete</h1>
     <p>Online Clearance System - Diploma Program</p>
@@ -139,7 +134,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </body>
 </html>
-
-
-
 

@@ -77,11 +77,14 @@ $office_map = [
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Clearance Certificate</title>
   <style>
-    body { font-family: Arial, sans-serif; background:#f8fafc; color:#0f172a; margin:0; padding:24px; }
+    * { font-family: "Times New Roman", Times, serif; }
+    body { font-family: "Times New Roman", Times, serif; background:#f8fafc; color:#0f172a; margin:0; padding:24px; }
     .sheet { max-width:900px; margin:0 auto; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:24px; }
+    .logo-wrap { display:flex; justify-content:center; margin-bottom:10px; }
+    .logo-wrap img { width:70px; height:70px; object-fit:contain; }
     h1 { margin:0 0 6px 0; color:#1e3a8a; }
     .sub { color:#475569; margin-bottom:18px; }
     .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; margin-bottom:16px; }
@@ -90,13 +93,48 @@ $office_map = [
     table { width:100%; border-collapse:collapse; margin-top:8px; }
     th, td { border:1px solid #e2e8f0; padding:10px; text-align:left; font-size:14px; }
     th { background:#eff6ff; color:#1e3a8a; }
-    .ok { color:#166534; font-weight:700; }
-    .print { margin-top:16px; }
+    .status-box {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      min-height:100%;
+    }
+    .ok {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 16px;
+      border-radius:999px;
+      background:linear-gradient(135deg, #16a34a, #15803d);
+      color:#fff;
+      font-weight:700;
+      font-size:14px;
+      line-height:1;
+      letter-spacing:.02em;
+      min-width:126px;
+      box-shadow:0 4px 10px rgba(22,163,74,.25);
+    }
+    .status-meta { color:#334155; font-size:14px; line-height:1.25; text-align:center; }
+    .status-meta div + div { margin-top:2px; }
+    .save-wrap { margin-top:22px; display:flex; justify-content:center; }
+    .print {
+      border:1px solid #224b83;
+      border-radius:999px;
+      padding:8px 24px;
+      font-size:12px;
+      font-weight:800;
+      color:#fff;
+      background:linear-gradient(180deg,#2a5da0,#1f4072);
+      cursor:pointer;
+    }
     @media print { .print { display:none; } body { padding:0; background:#fff; } .sheet { border:none; } }
   </style>
 </head>
 <body>
   <div class="sheet">
+    <div class="logo-wrap"><img src="/assets/img/ocs.png" alt="Logo"></div>
     <h1>Clearance Certificate</h1>
     <div class="sub">Diploma Program Clearance System</div>
     <div class="grid">
@@ -106,7 +144,16 @@ $office_map = [
       <div><div class="k">Year Level</div><div class="v"><?= (int)($req['year_level'] ?? 0) ?></div></div>
       <div><div class="k">Semester</div><div class="v"><?= htmlspecialchars($req['semester']) ?></div></div>
       <div><div class="k">School Year</div><div class="v"><?= htmlspecialchars($req['school_year']) ?></div></div>
-      <div><div class="k">Clearance Status</div><div class="v ok">Cleared</div></div>
+      <div>
+        <div class="k">Clearance Status</div>
+        <div class="status-box">
+          <div class="ok">CLEARED</div>
+          <div class="status-meta">
+            <div>Date cleared: <?= $date_cleared ? date('F j, Y', strtotime($date_cleared)) : date('F j, Y') ?></div>
+            <div>Semester: <?= htmlspecialchars($req['semester']) ?></div>
+          </div>
+        </div>
+      </div>
       <div><div class="k">Date Cleared</div><div class="v"><?= $date_cleared ? date('F j, Y', strtotime($date_cleared)) : date('F j, Y') ?></div></div>
     </div>
 
@@ -123,9 +170,10 @@ $office_map = [
       </tbody>
     </table>
 
-    <button class="print" onclick="window.print()">Print / Save as PDF</button>
+    <div class="save-wrap">
+      <button class="print" onclick="window.print()">Print / Save as PDF</button>
+    </div>
   </div>
 </body>
 </html>
-
 

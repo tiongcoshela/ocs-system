@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // BACKEND
 session_start();
 
@@ -18,7 +18,7 @@ $user_id   = (int)$_SESSION['user_id'];
 $user_name = $_SESSION['user_name'] ?? 'Admin';
 $first_name = explode(' ', trim($user_name))[0];
 $initials   = strtoupper(substr($user_name, 0, 1) . (strpos($user_name, ' ') ? substr($user_name, strpos($user_name, ' ') + 1, 1) : ''));
-$allowed_views = ['dashboard','users','clearances','clearance_details','reports','offices','notifications','settings'];
+$allowed_views = ['dashboard','users','clearances','clearance_details','offices','notifications','settings'];
 $view = $_GET['view'] ?? 'dashboard';
 if (!in_array($view, $allowed_views, true)) {
     $view = 'dashboard';
@@ -261,14 +261,14 @@ $clearance_progress = ($total_requests > 0) ? round(($approved_requests / $total
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>Admin Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/admin.css">
 </head>
 <body>
 <div class="top">
-  <div class="brand"><div class="logo"><img src="assets/img/logo.png" alt="Logo" onerror="this.style.display='none'; this.parentNode.textContent='AC'; this.parentNode.style.fontWeight='800'; this.parentNode.style.color='#1e3a8a';"></div><div><div style="font-weight:800"><?= htmlspecialchars($settings['system_name']) ?></div><div style="font-size:12px;color:#bfdbfe">Diploma Program TVET</div></div></div>
+  <div class="brand"><div class="logo"><img src="/assets/img/ocs.png" alt="Logo" onerror="this.style.display='none'; this.parentNode.textContent='AC'; this.parentNode.style.fontWeight='800'; this.parentNode.style.color='#1e3a8a';"></div><div><div style="font-weight:800"><?= htmlspecialchars($settings['system_name']) ?></div><div style="font-size:12px;color:#bfdbfe">Diploma Program TVET</div></div></div>
   <div style="display:flex;align-items:center;gap:10px"><div style="background:rgba(255,255,255,.15);padding:8px 12px;border-radius:999px;font-size:13px"><?= htmlspecialchars($initials) ?> <?= htmlspecialchars($first_name) ?></div><a href="logout.php" class="logout-btn">Logout</a></div>
 </div>
 <div class="wrap">
@@ -283,7 +283,6 @@ $clearance_progress = ($total_requests > 0) ? round(($approved_requests / $total
       <a class="<?= $view === 'dashboard' ? 'active' : '' ?>" href="admin_dashboard.php?view=dashboard">Dashboard</a>
       <a class="<?= $view === 'users' ? 'active' : '' ?>" href="admin_dashboard.php?view=users">Users</a>
       <a class="<?= $view === 'clearances' ? 'active' : '' ?>" href="admin_dashboard.php?view=clearances">Clearances</a>
-      <a class="<?= $view === 'reports' ? 'active' : '' ?>" href="admin_dashboard.php?view=reports">Reports</a>
       <a class="<?= $view === 'offices' ? 'active' : '' ?>" href="admin_dashboard.php?view=offices">Offices</a>
       <a class="<?= $view === 'notifications' ? 'active' : '' ?>" href="admin_dashboard.php?view=notifications">Notifications</a>
       <a class="<?= $view === 'settings' ? 'active' : '' ?>" href="admin_dashboard.php?view=settings">Settings</a>
@@ -308,39 +307,25 @@ $clearance_progress = ($total_requests > 0) ? round(($approved_requests / $total
       <div class="kpi k4"><div class="l">Rejected</div><div class="n"><?= $rejected_requests ?></div></div>
     </div>
 
-    <div class="dash-grid">
-      <div class="card">
-        <div class="ch">All Clearance Requests</div>
-        <div class="pad">
-          <table>
-            <thead><tr><th>Student Name</th><th>Program/Course</th><th>Overall Status</th><th>Date</th><th>Action</th></tr></thead>
-            <tbody>
-            <?php if (!empty($requests)): foreach ($requests as $r): ?>
-              <tr>
-                <td><strong><?= htmlspecialchars($r['name']) ?></strong><div class="small"><?= htmlspecialchars($r['email']) ?></div></td>
-                <td><?= htmlspecialchars($r['course']) ?></td>
-                <td><span class="badge <?= htmlspecialchars($r['status']) ?>"><?= ucfirst($r['status']) ?></span></td>
-                <td><?= date('Y-m-d', strtotime($r['created_at'])) ?></td>
-                <td><a class="btn b2" href="admin_dashboard.php?view=clearance_details&id=<?= (int)$r['id'] ?>">View Details</a></td>
-              </tr>
-            <?php endforeach; else: ?>
-              <tr><td colspan="5" class="small">No clearance requests yet.</td></tr>
-            <?php endif; ?>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="ch">System Overview</div>
-        <div class="pad">
-          <div class="report-grid">
-            <div class="report-box"><div class="k">Cleared Students</div><div class="v"><?= $approved_requests ?></div></div>
-            <div class="report-box"><div class="k">Ongoing</div><div class="v"><?= $pending_requests ?></div></div>
-            <div class="report-box"><div class="k">Issues</div><div class="v"><?= $rejected_requests ?></div></div>
-          </div>
-          <a class="btn b1" href="admin_dashboard.php?view=reports" style="width:100%;margin-top:14px;text-align:center">Generate Report</a>
-        </div>
+    <div class="card" style="margin-top:14px">
+      <div class="ch">All Clearance Requests</div>
+      <div class="pad">
+        <table>
+          <thead><tr><th>Student Name</th><th>Program/Course</th><th>Overall Status</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody>
+          <?php if (!empty($requests)): foreach ($requests as $r): ?>
+            <tr>
+              <td><strong><?= htmlspecialchars($r['name']) ?></strong><div class="small"><?= htmlspecialchars($r['email']) ?></div></td>
+              <td><?= htmlspecialchars($r['course']) ?></td>
+              <td><span class="badge <?= htmlspecialchars($r['status']) ?>"><?= ucfirst($r['status']) ?></span></td>
+              <td><?= date('Y-m-d', strtotime($r['created_at'])) ?></td>
+              <td><a class="btn b2" href="admin_dashboard.php?view=clearance_details&id=<?= (int)$r['id'] ?>">View Details</a></td>
+            </tr>
+          <?php endforeach; else: ?>
+            <tr><td colspan="5" class="small">No clearance requests yet.</td></tr>
+          <?php endif; ?>
+          </tbody>
+        </table>
       </div>
     </div>
     <?php endif; ?>
@@ -409,23 +394,6 @@ $clearance_progress = ($total_requests > 0) ? round(($approved_requests / $total
             <?php endif; ?>
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-    <?php endif; ?>
-
-    <?php if ($view === 'reports'): ?>
-    <div class="dash-grid">
-      <div class="card">
-        <div class="ch">Reports Overview</div>
-        <div class="pad">
-          <div class="report-grid">
-            <div class="report-box"><div class="k">Cleared Students</div><div class="v"><?= $approved_requests ?></div></div>
-            <div class="report-box"><div class="k">Pending Clearances</div><div class="v"><?= $pending_requests ?></div></div>
-            <div class="report-box"><div class="k">Rejected Requests</div><div class="v"><?= $rejected_requests ?></div></div>
-            <div class="report-box"><div class="k">Clearance Report</div><div class="v">&#129534;</div></div>
-          </div>
-          <a class="btn b1" href="admin_dashboard.php?view=reports" style="width:100%;margin-top:14px;text-align:center">Generate Report</a>
         </div>
       </div>
     </div>
@@ -619,5 +587,4 @@ $clearance_progress = ($total_requests > 0) ? round(($approved_requests / $total
 </script>
 </body>
 </html>
-
 

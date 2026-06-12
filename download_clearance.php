@@ -83,15 +83,15 @@ $office_map = [
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Clearance Certificate</title>
   <style>
     :root{--ink:#1e293b;--deep:#162a5f;--line:#9fb3d5;--panel:#f8fbff;--soft:#eaf1fb;--ok:#177337;}
-    *{box-sizing:border-box}
+    *{box-sizing:border-box;font-family:"Times New Roman", Times, serif}
     body{
       margin:0;
       padding:18px;
-      font-family:Cambria, "Times New Roman", serif;
+      font-family:"Times New Roman", Times, serif;
       color:var(--ink);
       background:
         radial-gradient(circle at 12% 20%, rgba(148,163,184,.16) 0 2px, transparent 3px) 0 0/22px 22px,
@@ -123,16 +123,12 @@ $office_map = [
     .sheet::after{width:220px;height:220px;right:-120px;bottom:12px}
     .top-accent{height:3px;background:#44b7bf;width:43%;margin-bottom:4px;border-radius:2px}
     .logo{
-      width:54px;height:54px;margin:-4px auto 2px;border-radius:50%;
-      border:1px solid #9aa8bf;background:radial-gradient(circle at 30% 30%,#fff,#dbe3ef);
-      color:#4b5563;font-size:11px;font-weight:700;line-height:1.05;
-      display:flex;align-items:center;justify-content:center;text-align:center;
-      box-shadow:inset 0 0 0 2px #eef2f8;
-      font-family:"Plus Jakarta Sans",Arial,sans-serif;
+      width:70px;height:70px;margin:-4px auto 4px;
+      display:block;object-fit:contain;
     }
     .title{text-align:center}
     h1{margin:0;color:var(--deep);font-size:52px;line-height:.98;font-weight:700}
-    .sub{margin-top:2px;font-size:22px;color:#334155;font-family:Georgia,serif}
+    .sub{margin-top:2px;font-size:22px;color:#334155}
     .top-row{margin-top:8px;display:grid;grid-template-columns:2.8fr 1fr;gap:6px}
     .box{
       background:rgba(255,255,255,.82);
@@ -141,7 +137,6 @@ $office_map = [
       padding:7px 10px;
     }
     .box-title{
-      font-family:"Plus Jakarta Sans",Arial,sans-serif;
       font-size:12px;
       font-weight:800;
       color:#1f2937;
@@ -150,29 +145,29 @@ $office_map = [
       margin-bottom:6px;
     }
     .student-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px}
-    .field{display:flex;align-items:center;gap:7px;font-family:"Plus Jakarta Sans",Arial,sans-serif}
+    .field{display:flex;align-items:center;gap:7px}
     .ico{color:#64748b;font-size:14px;width:14px;text-align:center}
     .value{font-size:14px;font-weight:600;color:#1f2937}
-    .status-box{text-align:center;display:flex;flex-direction:column;justify-content:center}
+    .status-box{text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px}
     .cleared{
       display:inline-block;
       margin:0 auto;
-      min-width:154px;
-      padding:8px 20px 7px;
+      min-width:126px;
+      padding:8px 14px;
       border-radius:999px;
-      background:linear-gradient(180deg,#2ea44f,#166534);
+      background:linear-gradient(135deg, #16a34a, #15803d);
       color:#fff;
-      font-size:35px;
+      font-size:16px;
       font-weight:700;
       letter-spacing:.03em;
       line-height:1;
-      box-shadow:0 2px 0 #14532d,inset 0 0 0 2px rgba(255,255,255,.35);
+      box-shadow:0 4px 10px rgba(22,163,74,.25);
     }
-    .meta{margin-top:6px;font-family:"Plus Jakarta Sans",Arial,sans-serif;color:#334155}
-    .meta .d{font-size:23px;font-weight:700;line-height:1.1}
-    .meta .s{font-size:21px;font-weight:700;line-height:1.1;margin-top:2px}
+    .meta{margin-top:0;color:#334155}
+    .meta .d,.meta .s{font-size:14px;font-weight:700;line-height:1.25}
+    .meta .s{margin-top:2px}
     .table-wrap{margin-top:6px;border:1px solid #92a9ca;border-radius:4px;overflow:hidden}
-    table{width:100%;border-collapse:collapse;font-family:"Plus Jakarta Sans",Arial,sans-serif}
+    table{width:100%;border-collapse:collapse}
     th,td{padding:7px 9px;text-align:left;font-size:13px;border-right:1px solid #b7c7dd}
     th:last-child,td:last-child{border-right:none}
     thead th{
@@ -185,12 +180,11 @@ $office_map = [
     tbody tr:nth-child(even){background:#e7effb}
     tbody td{border-top:1px solid #cad7ea}
     .ok{display:inline-flex;align-items:center;gap:6px;color:var(--ok);font-weight:700}
-    .save-wrap{margin-top:8px;display:flex;justify-content:center}
+    .save-wrap{margin-top:22px;display:flex;justify-content:center}
     .save-btn{
       border:1px solid #224b83;
       border-radius:999px;
       padding:8px 26px;
-      font-family:"Plus Jakarta Sans",Arial,sans-serif;
       font-size:12px;
       font-weight:800;
       color:#fff;
@@ -203,8 +197,8 @@ $office_map = [
       .sub{font-size:18px}
       .top-row{grid-template-columns:1fr}
       .student-grid{grid-template-columns:1fr}
-      .cleared{font-size:30px}
-      .meta .d,.meta .s{font-size:18px}
+      .cleared{font-size:15px}
+      .meta .d,.meta .s{font-size:13px}
     }
     @media print{
       body{padding:0;background:#fff}
@@ -216,7 +210,7 @@ $office_map = [
 <body>
   <div class="sheet">
     <div class="top-accent"></div>
-    <div class="logo">Asian<br>College</div>
+    <img class="logo" src="assets/img/ocs.png" alt="School Logo">
     <div class="title">
       <h1>Clearance Certificate</h1>
       <div class="sub">Diploma Program Clearance System</div>
@@ -235,8 +229,8 @@ $office_map = [
       <div class="box status-box">
         <div class="cleared">CLEARED</div>
         <div class="meta">
-          <div class="d"><?= $date_cleared ? date('M j, Y', strtotime($date_cleared)) : date('M j, Y') ?></div>
-          <div class="s"><?= htmlspecialchars($req['semester']) ?></div>
+          <div class="d">Date cleared: <?= $date_cleared ? date('M j, Y', strtotime($date_cleared)) : date('M j, Y') ?></div>
+          <div class="s">Semester: <?= htmlspecialchars($req['semester']) ?></div>
         </div>
       </div>
     </div>

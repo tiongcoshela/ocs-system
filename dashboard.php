@@ -32,6 +32,33 @@ $office_labels = [
     'tvet_director'    => ['TVET Director', 'Ms. Melody C. Prado']
 ];
 
+$office_information = [
+    'library' => [
+        'responsibilities' => 'Verify library account status, check unreturned books/materials, and clear students with no library obligations.',
+        'guidelines' => 'Confirm all borrowed items are returned and unsettled balances are cleared before approving.'
+    ],
+    'cashier' => [
+        'responsibilities' => 'Validate payment records and financial obligations required for clearance processing.',
+        'guidelines' => 'Approve only when all required fees are fully settled and reflected in official records.'
+    ],
+    'mis' => [
+        'responsibilities' => 'Review student system/account compliance and verify IT-related documentation or account issues.',
+        'guidelines' => 'Ensure student records are complete and there are no unresolved MIS-related account concerns.'
+    ],
+    'toolroom' => [
+        'responsibilities' => 'Check tool/equipment accountability for students under DHT-related laboratory and practical activities.',
+        'guidelines' => 'Approve after confirming all borrowed tools are returned and no pending toolroom liability remains.'
+    ],
+    'tvet_coordinator' => [
+        'responsibilities' => 'Oversee program-level clearance readiness and validate completion of coordinator-level requirements.',
+        'guidelines' => 'Review prior office outcomes and ensure academic/program requirements are satisfied before approval.'
+    ],
+    'tvet_director' => [
+        'responsibilities' => 'Provide final leadership review and authorization for clearance completion.',
+        'guidelines' => 'Approve only after all preceding required offices are properly cleared and documented.'
+    ]
+];
+
 $role_labels = [
     'student'          => 'Student',
     'library'          => 'Library',
@@ -45,10 +72,7 @@ $role_labels = [
 $staff_roles = ['library','toolroom','cashier','mis','tvet_coordinator','tvet_director'];
 $is_dht_course = ($course === 'DHT');
 $middle_office = $is_dht_course ? 'toolroom' : 'mis';
-$sequential_offices = ['library', $middle_office, 'tvet_coordinator', 'tvet_director'];
-if ($year_level === 3) {
-    $sequential_offices = ['library', $middle_office, 'cashier', 'tvet_coordinator', 'tvet_director'];
-}
+$sequential_offices = get_flow_offices_by_student($course, $year_level);
 
 $student_program_short = ($course === 'DHT') ? 'DHT' : 'DIT';
 $student_course_full = ($course === 'DHT')
@@ -57,11 +81,43 @@ $student_course_full = ($course === 'DHT')
 
 function get_flow_offices_by_student($student_course, $student_year_level) {
     $c = strtoupper(trim((string)$student_course));
-    $middle = ($c === 'DHT') ? 'toolroom' : 'mis';
-    if ((int)$student_year_level === 3) {
-        return ['library', $middle, 'cashier', 'tvet_coordinator', 'tvet_director'];
+    $y = (int)$student_year_level;
+    $flow = ['library'];
+    if ($c === 'DHT') {
+        $flow[] = 'toolroom';
+    } else {
+        $flow[] = 'mis';
     }
-    return ['library', $middle, 'tvet_coordinator', 'tvet_director'];
+    if ($y === 3) {
+        $flow[] = 'cashier';
+    }
+    $flow[] = 'tvet_coordinator';
+    $flow[] = 'tvet_director';
+    return $flow;
+}
+
+function get_first_user_id_by_role($conn, $role) {
+    $role_e = mysqli_real_escape_string($conn, $role);
+    $res = mysqli_query($conn, "SELECT id FROM users WHERE role='$role_e' ORDER BY id ASC LIMIT 1");
+    if ($res && mysqli_num_rows($res) === 1) {
+        $row = mysqli_fetch_assoc($res);
+        return (int)($row['id'] ?? 0);
+    }
+    return 0;
+}
+
+function insert_notification($conn, $user_id, $message, $type = 'info') {
+    $uid = (int)$user_id;
+    if ($uid <= 0 || trim((string)$message) === '') {
+        return;
+    }
+    $msg_e = mysqli_real_escape_string($conn, $message);
+    $type_e = mysqli_real_escape_string($conn, $type);
+    mysqli_query($conn, "INSERT INTO notifications (user_id, message, type) VALUES ($uid, '$msg_e', '$type_e')");
+}
+
+function get_next_office_message($student_name) {
+    return trim($student_name) . "'s clearance request is now pending for your approval.";
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_request' && $user_role === 'student') {
@@ -91,6 +147,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $ofc_e = mysqli_real_escape_string($conn, $ofc);
         $initial_status = ($i === 0) ? 'pending' : 'not_started';
         mysqli_query($conn, "INSERT INTO clearance_items (request_id, office, status, remarks) VALUES ($new_req_id, '$ofc_e', '$initial_status', NULL)");
+    }
+
+    $first_office = $sequential_offices[0] ?? null;
+    if ($first_office !== null) {
+        $first_office_user_id = get_first_user_id_by_role($conn, $first_office);
+        if ($first_office_user_id > 0) {
+            $submit_msg = "A new clearance request from $user_name is awaiting your review.";
+            insert_notification($conn, $first_office_user_id, $submit_msg, 'info');
+        }
     }
 
     header('Location: dashboard.php?view=dashboard&msg=' . urlencode('Clearance request submitted successfully.'));
@@ -128,6 +193,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     mysqli_query($conn, "UPDATE clearance_items SET status='pending', remarks=NULL, reviewed_by=NULL, reviewed_at=NULL WHERE request_id=$req_id AND office='$office' AND status='rejected'");
     mysqli_query($conn, "UPDATE clearance_requests SET status='pending' WHERE id=$req_id AND student_id=$user_id");
+
+    $resubmit_user_id = get_first_user_id_by_role($conn, $office_raw);
+    if ($resubmit_user_id > 0) {
+        insert_notification($conn, $resubmit_user_id, get_next_office_message($user_name), 'info');
+    }
 
     $office_name = $office_labels[$office_raw][0] ?? $office_raw;
     header('Location: dashboard.php?view=clearance&msg=' . urlencode("Resubmitted to $office_name successfully."));
@@ -204,8 +274,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
         mysqli_query($conn, "UPDATE clearance_items SET status='$new_status', remarks=" . ($remarks_raw === '' ? "NULL" : "'$remarks'") . ", reviewed_by=$user_id, reviewed_at=NOW() WHERE request_id=$req_id AND office='$office'");
 
         if ($new_status === 'approved') {
+            $next_office_role = null;
+            $student_name_for_flow = 'Student';
             $flow_meta_res = mysqli_query($conn, "
-                SELECT u.course, u.year_level
+                SELECT u.course, u.year_level, u.name
                 FROM clearance_requests cr
                 JOIN users u ON u.id = cr.student_id
                 WHERE cr.id = $req_id
@@ -217,12 +289,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                 $flow_meta = mysqli_fetch_assoc($flow_meta_res);
                 $flow_course = strtoupper(trim((string)($flow_meta['course'] ?? 'DIT')));
                 $flow_year = (int)($flow_meta['year_level'] ?? 1);
+                $student_name_for_flow = trim((string)($flow_meta['name'] ?? 'Student'));
             }
             $req_offices = get_flow_offices_by_student($flow_course, $flow_year);
             $current_index = array_search($user_role, $req_offices, true);
             if ($current_index !== false && isset($req_offices[$current_index + 1])) {
-                $next_office = mysqli_real_escape_string($conn, $req_offices[$current_index + 1]);
+                $next_office_role = $req_offices[$current_index + 1];
+                $next_office = mysqli_real_escape_string($conn, $next_office_role);
                 mysqli_query($conn, "UPDATE clearance_items SET status='pending' WHERE request_id=$req_id AND office='$next_office' AND status='not_started'");
+            }
+
+            if ($next_office_role !== null) {
+                $next_user_id = get_first_user_id_by_role($conn, $next_office_role);
+                if ($next_user_id > 0) {
+                    insert_notification($conn, $next_user_id, get_next_office_message($student_name_for_flow), 'info');
+                }
             }
 
             $remaining_res = mysqli_query($conn, "SELECT COUNT(*) c FROM clearance_items WHERE request_id=$req_id AND status IN ('pending','not_started','rejected')");
@@ -254,19 +335,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
 
 $notifications = [];
 $unread_count = 0;
-$notifs_res = mysqli_query($conn, "SELECT * FROM notifications WHERE user_id=$user_id ORDER BY created_at DESC LIMIT 8");
+$unread_res = mysqli_query($conn, "SELECT COUNT(*) AS c FROM notifications WHERE user_id=$user_id AND is_read=0");
+if ($unread_res && mysqli_num_rows($unread_res) === 1) {
+    $unread_count = (int)(mysqli_fetch_assoc($unread_res)['c'] ?? 0);
+}
+$notifs_res = mysqli_query($conn, "SELECT * FROM notifications WHERE user_id=$user_id ORDER BY created_at DESC");
 if ($notifs_res) {
     while ($n = mysqli_fetch_assoc($notifs_res)) {
         $notifications[] = $n;
-        if ((int)$n['is_read'] === 0) {
-            $unread_count++;
-        }
     }
 }
 
 $success_msg = isset($_GET['msg']) ? htmlspecialchars($_GET['msg']) : '';
 $allowed_student_views = ['dashboard','clearance','notifications','profile','settings'];
-$allowed_staff_views = ['dashboard','requests','profile','settings'];
+$allowed_staff_views = ['dashboard','requests','notifications','profile','settings'];
 $view = $_GET['view'] ?? 'dashboard';
 if ($user_role === 'student' && !in_array($view, $allowed_student_views, true)) $view = 'dashboard';
 if (in_array($user_role, $staff_roles, true) && !in_array($view, $allowed_staff_views, true)) $view = 'dashboard';
@@ -276,6 +358,9 @@ $progress_pct = 0;
 $clearance_items = [];
 $clearance_req = null;
 $all_students = [];
+$approved_students = [];
+$pending_students = [];
+$rejected_students = [];
 $pending_count = 0;
 $approved_count = 0;
 $rejected_count = 0;
@@ -330,6 +415,16 @@ if (in_array($user_role, $staff_roles, true)) {
         while ($s = mysqli_fetch_assoc($stu_res)) {
             $all_students[] = $s;
             $ost = $s['office_status'] ?? 'not_started';
+            if ($ost === 'approved') {
+                $approved_students[] = $s['name'] ?? '';
+            } elseif ($ost === 'pending') {
+                $pending_students[] = $s['name'] ?? '';
+            } elseif ($ost === 'rejected') {
+                $rejected_students[] = [
+                    'name' => $s['name'] ?? '',
+                    'remarks' => trim((string)($s['remarks'] ?? ''))
+                ];
+            }
             if ($ost === 'pending' || $ost === 'not_started') $pending_count++;
             elseif ($ost === 'approved') $approved_count++;
             elseif ($ost === 'rejected') $rejected_count++;
@@ -340,13 +435,18 @@ if (in_array($user_role, $staff_roles, true)) {
     $stats['pending'] = $pending_count;
     $stats['rejected'] = $rejected_count;
 }
+
+$current_office_name = $role_labels[$user_role] ?? ucfirst($user_role);
+$current_office_personnel = $office_labels[$user_role][1] ?? 'Asian College Dumaguete';
+$current_office_responsibilities = $office_information[$user_role]['responsibilities'] ?? 'Review and process clearance requests assigned to your office.';
+$current_office_guidelines = $office_information[$user_role]['guidelines'] ?? 'Follow clearance policy and verify records before approving or rejecting requests.';
 ?>
 <!-- FRONTEND -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/dashboard.css">
@@ -354,7 +454,7 @@ if (in_array($user_role, $staff_roles, true)) {
 <body>
 <div class="top">
   <div class="brand">
-    <img src="assets/img/logo.png" alt="Logo" onerror="this.style.display='none';">
+    <img src="/assets/img/ocs.png" alt="Logo" onerror="this.style.display='none';">
     <div>
       <h1>Diploma Program Clearance System</h1>
       <small>Diploma Program TVET</small>
@@ -378,6 +478,8 @@ if (in_array($user_role, $staff_roles, true)) {
     <a class="item <?= $view==='dashboard'?'active':'' ?>" href="dashboard.php?view=dashboard"><span class="ic">&#127968;</span> Dashboard</a>
     <a class="item <?= ($view==='clearance'||$view==='requests')?'active':'' ?>" href="dashboard.php?view=<?= $user_role==='student'?'clearance':'requests' ?>"><span class="ic">&#128203;</span> <?= $user_role === 'student' ? 'My Clearance' : 'Requests' ?></a>
     <?php if ($user_role === 'student'): ?>
+    <a class="item <?= $view==='notifications'?'active':'' ?>" href="dashboard.php?view=notifications"><span class="ic">&#128276;</span> Notifications<?= $unread_count > 0 ? ' (' . $unread_count . ')' : '' ?></a>
+    <?php else: ?>
     <a class="item <?= $view==='notifications'?'active':'' ?>" href="dashboard.php?view=notifications"><span class="ic">&#128276;</span> Notifications<?= $unread_count > 0 ? ' (' . $unread_count . ')' : '' ?></a>
     <?php endif; ?>
     <div class="sect">ACCOUNT</div>
@@ -589,10 +691,10 @@ if (in_array($user_role, $staff_roles, true)) {
                 <td>
                   <?php if (!empty($s['req_id'])): ?>
                   <form method="POST" style="display:flex;flex-direction:column;gap:6px;">
-                    <input type="hidden" name="req_id" value="<?= (int)$s['req_id'] ?>">
-                    <input type="text" name="remarks" placeholder="Remarks (required for reject)" value="" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;">
-                    <?php if ($ost !== 'approved'): ?><button class="btn approve" type="submit" name="action" value="approve">APPROVE</button><?php endif; ?>
-                    <?php if ($ost !== 'rejected'): ?><button class="btn reject" type="submit" name="action" value="reject">REJECT</button><?php endif; ?>
+                  <input type="hidden" name="req_id" value="<?= (int)$s['req_id'] ?>">
+                  <input type="text" name="remarks" placeholder="Remarks (required for reject)" value="" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;">
+                    <?php if ($ost === 'pending'): ?><button class="btn approve" type="submit" name="action" value="approve">APPROVE</button><?php endif; ?>
+                    <?php if ($ost === 'pending'): ?><button class="btn reject" type="submit" name="action" value="reject">REJECT</button><?php endif; ?>
                   </form>
                   <?php else: ?>
                     <span class="muted">-</span>
@@ -607,17 +709,30 @@ if (in_array($user_role, $staff_roles, true)) {
         </div>
 
         <div class="panel" id="notifications-section">
-          <div class="ph">Office Summary</div>
+          <div class="ph">List Summary</div>
           <div class="stack">
-            <div class="muted" style="padding:10px;background:#f3f4f6;border-radius:10px;">
-              <strong><?= htmlspecialchars($role_labels[$user_role] ?? ucfirst($user_role)) ?></strong><br>
-              <?= htmlspecialchars($office_labels[$user_role][1] ?? 'Asian College Dumaguete') ?>
+            <div class="summary-box summary-approved">
+              <span class="summary-title">List of Approved Students</span>
+              <div class="summary-count"><?= (int)$approved_count ?></div>
             </div>
-            <div class="sum s1">APPROVED: <?= $approved_count ?></div>
-            <div class="sum s2">PENDING: <?= $pending_count ?></div>
-            <div class="sum s3">REJECTED: <?= $rejected_count ?></div>
+            <div class="summary-box summary-pending">
+              <span class="summary-title">List of Pending Students</span>
+              <div class="summary-count"><?= (int)$pending_count ?></div>
+            </div>
+            <div class="summary-box summary-rejected">
+              <span class="summary-title">List of Rejected Students</span>
+              <div class="summary-count"><?= (int)$rejected_count ?></div>
+            </div>
           </div>
         </div>
+      </div>
+      <?php elseif ($view === 'notifications'): ?>
+      <div class="hero"><div><h2>&#128276; Notifications</h2><p>All your clearance updates and alerts</p></div><div class="progress-box"><div class="num"><?= (int)$unread_count ?></div><div class="lbl">Unread</div></div></div>
+      <div class="panel" style="margin-top:14px;">
+        <div class="ph"><div class="ph-row"><span>All Notifications</span><span class="ph-note"><?= (int)$unread_count ?> unread</span></div></div>
+        <?php if (!empty($notifications)): foreach ($notifications as $n): ?>
+          <div class="notif-row"><div class="notif-icon">&#10003;</div><div><div><strong><?= htmlspecialchars($n['message']) ?></strong></div><div class="muted"><?= date('M j, Y g:i A', strtotime($n['created_at'])) ?></div></div></div>
+        <?php endforeach; else: ?><div class="ni muted" style="text-align:center;">No notifications yet.</div><?php endif; ?>
       </div>
       <?php elseif ($view === 'requests'): ?>
       <div class="hero">
@@ -644,10 +759,10 @@ if (in_array($user_role, $staff_roles, true)) {
                 <td>
                   <?php if (!empty($s['req_id'])): ?>
                   <form method="POST" style="display:flex;flex-direction:column;gap:6px;">
-                    <input type="hidden" name="req_id" value="<?= (int)$s['req_id'] ?>">
-                    <input type="text" name="remarks" placeholder="Remarks (required for reject)" value="" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;">
-                    <?php if ($ost !== 'approved'): ?><button class="btn approve" type="submit" name="action" value="approve">APPROVE</button><?php endif; ?>
-                    <?php if ($ost !== 'rejected'): ?><button class="btn reject" type="submit" name="action" value="reject">REJECT</button><?php endif; ?>
+                  <input type="hidden" name="req_id" value="<?= (int)$s['req_id'] ?>">
+                  <input type="text" name="remarks" placeholder="Remarks (required for reject)" value="" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;">
+                    <?php if ($ost === 'pending'): ?><button class="btn approve" type="submit" name="action" value="approve">APPROVE</button><?php endif; ?>
+                    <?php if ($ost === 'pending'): ?><button class="btn reject" type="submit" name="action" value="reject">REJECT</button><?php endif; ?>
                   </form>
                   <?php else: ?><span class="muted">-</span><?php endif; ?>
                 </td>
@@ -659,15 +774,20 @@ if (in_array($user_role, $staff_roles, true)) {
           </table>
         </div>
         <div class="panel">
-          <div class="ph">Office Summary</div>
+          <div class="ph">List Summary</div>
           <div class="stack">
-            <div class="muted" style="padding:10px;background:#f3f4f6;border-radius:10px;">
-              <strong><?= htmlspecialchars($role_labels[$user_role] ?? ucfirst($user_role)) ?></strong><br>
-              <?= htmlspecialchars($office_labels[$user_role][1] ?? 'Asian College Dumaguete') ?>
+            <div class="summary-box summary-approved">
+              <span class="summary-title">List of Approved Students</span>
+              <div class="summary-count"><?= (int)$approved_count ?></div>
             </div>
-            <div class="sum s1">APPROVED: <?= $approved_count ?></div>
-            <div class="sum s2">PENDING: <?= $pending_count ?></div>
-            <div class="sum s3">REJECTED: <?= $rejected_count ?></div>
+            <div class="summary-box summary-pending">
+              <span class="summary-title">List of Pending Students</span>
+              <div class="summary-count"><?= (int)$pending_count ?></div>
+            </div>
+            <div class="summary-box summary-rejected">
+              <span class="summary-title">List of Rejected Students</span>
+              <div class="summary-count"><?= (int)$rejected_count ?></div>
+            </div>
           </div>
         </div>
       </div>
@@ -703,4 +823,5 @@ if (in_array($user_role, $staff_roles, true)) {
 </div>
 </body>
 </html>
+
 
